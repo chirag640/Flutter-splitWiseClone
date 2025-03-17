@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:test_firebase/widgets/group_details.dart';
+import 'package:splitwise/widgets/group_details.dart';
+
 
 class GroupsList extends StatelessWidget {
   const GroupsList({super.key});

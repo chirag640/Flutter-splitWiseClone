@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:test_firebase/widgets/add_expenses.dart';
-import 'package:test_firebase/widgets/expenses_list.dart';
-import 'package:test_firebase/widgets/add_group.dart';
-import 'package:test_firebase/widgets/user_profile.dart';
-import 'package:test_firebase/widgets/group_list.dart';
+import 'package:splitwise/widgets/add_expenses.dart';
+import 'package:splitwise/widgets/add_group.dart';
+import 'package:splitwise/widgets/expenses_list.dart';
+import 'package:splitwise/widgets/group_list.dart';
+import 'package:splitwise/widgets/user_profile.dart';
+
 
 class Home extends StatefulWidget {
   const Home({super.key});

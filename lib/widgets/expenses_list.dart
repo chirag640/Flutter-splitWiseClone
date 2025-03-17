@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:test_firebase/model/expense.dart';
+import 'package:splitwise/model/expense.dart';
 
 class ExpensesList extends StatefulWidget {
   const ExpensesList({super.key});

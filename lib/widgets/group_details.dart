@@ -204,6 +204,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
             .collection('groups')
             .doc(widget.groupId)
             .collection('expenses')
+            .orderBy('createdAt', descending: true) // Order by creation timestamp in descending order
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
