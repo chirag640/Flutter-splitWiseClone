@@ -29,14 +29,14 @@ class _HomeState extends State<Home> {
 
   void _onAddButtonPressed() {
     if (_selectedIndex == 0) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AddExpenseScreen()),
+      showDialog(
+        context: context,
+        builder: (context) => AddExpenseScreen(),
       );
     } else if (_selectedIndex == 1) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => AddGroupScreen()),
+      showDialog(
+        context: context,
+        builder: (context) => AddGroupScreen(),
       );
     }
   }
