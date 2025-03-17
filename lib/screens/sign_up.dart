@@ -55,14 +55,23 @@ class _SignUpState extends State<SignUp> {
 
       User? user = userCredential.user;
       if (user != null) {
+        await user.sendEmailVerification();
+
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
           'displayName': _fullName,
           'email': _email,
           'uid': user.uid,
         });
-      }
 
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verification email sent. Please check your inbox.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        Navigator.pushNamedAndRemoveUntil(context, '/login_signup', (route) => false);
+      }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

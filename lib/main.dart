@@ -53,7 +53,12 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
         } else if (snapshot.hasData) {
-          return const Home();
+          User? user = snapshot.data;
+          if (user != null && user.emailVerified) {
+            return const Home();
+          } else {
+            return const LoginSignup();
+          }
         } else {
           return const LoginSignup();
         }

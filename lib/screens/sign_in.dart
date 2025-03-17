@@ -34,12 +34,24 @@ class _SignInState extends State<SignIn> {
     }
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      User? user = userCredential.user;
+      if (user != null && !user.emailVerified) {
+        await user.sendEmailVerification();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Email not verified. Verification email sent.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        await FirebaseAuth.instance.signOut();
+      } else {
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+      }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
