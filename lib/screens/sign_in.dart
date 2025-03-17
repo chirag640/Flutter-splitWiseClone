@@ -11,12 +11,17 @@ class SignIn extends StatefulWidget {
 class _SignInState extends State<SignIn> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
+  bool _obscurePassword = true;
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscurePassword = !_obscurePassword;
+    });
   }
 
   void _signInUser() async {
@@ -103,6 +108,13 @@ class _SignInState extends State<SignIn> {
                 decoration: InputDecoration(
                   labelText: 'Password',
                   labelStyle: TextStyle(color: Colors.white),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                      color: Colors.white,
+                    ),
+                    onPressed: _togglePasswordVisibility,
+                  ),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.white),
                     borderRadius: BorderRadius.circular(10),
@@ -122,7 +134,7 @@ class _SignInState extends State<SignIn> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF21A179),
                   ),
-                  child: Text('Sign In'),
+                  child: Text('Sign In', style: TextStyle(color: Colors.white)),
                 ),
               ),
               SizedBox(height: 20),
