@@ -172,6 +172,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         .collection('expenses')
         .doc(expenseId)
         .delete();
+
+    setState(() {}); // Trigger a rebuild to update the UI
   }
 
   void _updateExpense(String expenseId, String description, double amount) async {
@@ -218,6 +220,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           .update({
         'balance': FieldValue.increment(amount),
       });
+
+      setState(() {}); // Trigger a rebuild to update the UI
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
