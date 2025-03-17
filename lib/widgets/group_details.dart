@@ -146,8 +146,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
     return Scaffold(
       appBar: header(context),
       body: Column(
-        children: 
-        [
+        children: [
           users(),
           Text('Expenses', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           expenses(),
@@ -302,13 +301,32 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                 margin: EdgeInsets.all(10),
                 child: ListTile(
                   title: Text(member['fullName'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    member['balance'] >= 0
-                        ? 'You lent ${member['balance']}'
-                        : 'You borrowed ${-member['balance']}',
-                    style: TextStyle(
-                      color: member['balance'] >= 0 ? Colors.green : Colors.red,
-                    ),
+                  subtitle: FutureBuilder<Map<String, double>>(
+                    future: _getMemberBalances(member['id']),
+                    builder: (context, balanceSnapshot) {
+                      if (balanceSnapshot.connectionState == ConnectionState.waiting) {
+                        return Text('Loading...');
+                      }
+                      if (balanceSnapshot.hasError) {
+                        return Text('Error: ${balanceSnapshot.error}');
+                      }
+                      final balances = balanceSnapshot.data ?? {};
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: balances.entries.map((entry) {
+                          final otherMemberName = entry.key;
+                          final balance = entry.value;
+                          return Text(
+                            balance >= 0
+                                ? 'You lent $balance to $otherMemberName'
+                                : 'You borrowed ${-balance} from $otherMemberName',
+                            style: TextStyle(
+                              color: balance >= 0 ? Colors.green : Colors.red,
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
                 ),
               );
@@ -317,6 +335,39 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         },
       ),
     );
+  }
+
+  Future<Map<String, double>> _getMemberBalances(String memberId) async {
+    final expensesSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupId)
+        .collection('expenses')
+        .get();
+
+    final balances = <String, double>{};
+    for (var expense in expensesSnapshot.docs) {
+      final share = expense['share'];
+      final createdBy = expense['createdBy'];
+      final membersSnapshot = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .collection('members')
+          .get();
+
+      for (var member in membersSnapshot.docs) {
+        final otherMemberId = member['id'];
+        final otherMemberName = member['fullName'];
+        if (otherMemberId != memberId) {
+          if (createdBy == memberId) {
+            balances[otherMemberName] = (balances[otherMemberName] ?? 0) + share;
+          } else if (createdBy == otherMemberId) {
+            balances[otherMemberName] = (balances[otherMemberName] ?? 0) - share;
+          }
+        }
+      }
+    }
+
+    return balances;
   }
 
   AppBar header(BuildContext context) {
