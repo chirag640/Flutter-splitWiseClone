@@ -38,6 +38,10 @@ class _ExpensesListState extends State<ExpensesList> {
                 Expense.fromMap(doc.id, doc.data() as Map<String, dynamic>))
             .toList();
 
+        if (expenses.isEmpty) {
+          return Center(child: Text('No expenses found.'));
+        }
+
         return ListView.builder(
           itemCount: expenses.length,
           itemBuilder: (context, index) {

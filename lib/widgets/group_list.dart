@@ -6,6 +6,15 @@ import 'package:test_firebase/widgets/group_details.dart';
 class GroupsList extends StatelessWidget {
   const GroupsList({super.key});
 
+  Future<List<String>> _getGroupMembers(String groupId) async {
+    final membersSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(groupId)
+        .collection('members')
+        .get();
+    return membersSnapshot.docs.map((doc) => doc['fullName'] as String).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
@@ -29,6 +38,10 @@ class GroupsList extends StatelessWidget {
 
         final groups = snapshot.data!.docs;
 
+        if (groups.isEmpty) {
+          return Center(child: Text('No groups found.'));
+        }
+
         return ListView.builder(
           itemCount: groups.length,
           itemBuilder: (context, index) {
@@ -38,6 +51,19 @@ class GroupsList extends StatelessWidget {
               child: ListTile(
                 leading: Icon(Icons.group, size: 40),
                 title: Text(group['groupName'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                subtitle: FutureBuilder<List<String>>(
+                  future: _getGroupMembers(group.id),
+                  builder: (context, memberSnapshot) {
+                    if (memberSnapshot.connectionState == ConnectionState.waiting) {
+                      return Text('Loading members...');
+                    }
+                    if (memberSnapshot.hasError) {
+                      return Text('Error loading members');
+                    }
+                    final members = memberSnapshot.data ?? [];
+                    return Text('Members: ${members.join(', ')}');
+                  },
+                ),
                 onTap: () {
                   Navigator.push(
                     context,
