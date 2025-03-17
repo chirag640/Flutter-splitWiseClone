@@ -9,32 +9,37 @@ class SignIn extends StatefulWidget {
 }
 
 class _SignInState extends State<SignIn> {
-  bool _obscurePassword = true;
-  String _email = '';
-  String _password = '';
-
-  // Add a TextEditingController for each TextFormField
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  void _togglePasswordVisibility() {
-    setState(() {
-      _obscurePassword = !_obscurePassword;
-    });
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   void _signInUser() async {
-    // Get the values from the text fields
-    _email = _emailController.text;
-    _password = _passwordController.text;
-    // Sign in the user
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill all the fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _email,
-        password: _password,
+        email: email,
+        password: password,
       );
-      // Navigate to the home screen
-      Navigator.pushNamed(context, '/home');
+
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -55,7 +60,6 @@ class _SignInState extends State<SignIn> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back Button
               IconButton(
                 icon: Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
@@ -63,7 +67,6 @@ class _SignInState extends State<SignIn> {
                 },
               ),
               SizedBox(height: 20),
-              // Email
               TextFormField(
                 controller: _emailController,
                 style: TextStyle(color: Colors.white),
@@ -81,25 +84,13 @@ class _SignInState extends State<SignIn> {
                 ),
               ),
               SizedBox(height: 20),
-              // Password
               TextFormField(
                 controller: _passwordController,
-                obscureText: _obscurePassword,
+                obscureText: true,
                 style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Password',
                   labelStyle: TextStyle(color: Colors.white),
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                      color: Colors.white,
-                    ),
-                    onPressed: _togglePasswordVisibility,
-                  ),
-                  helperText: 'Minimum 8 characters',
-                  helperStyle: TextStyle(color: Colors.white),
                   enabledBorder: OutlineInputBorder(
                     borderSide: BorderSide(color: Colors.white),
                     borderRadius: BorderRadius.circular(10),
@@ -111,7 +102,6 @@ class _SignInState extends State<SignIn> {
                 ),
               ),
               SizedBox(height: 20),
-              // Done Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -120,7 +110,7 @@ class _SignInState extends State<SignIn> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF21A179),
                   ),
-                  child: Text('Done'),
+                  child: Text('Sign In'),
                 ),
               ),
               SizedBox(height: 20),

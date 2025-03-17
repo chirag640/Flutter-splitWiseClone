@@ -14,7 +14,6 @@ class _SignUpState extends State<SignUp> {
   String _fullName = '';
   String _email = '';
   String _password = '';
-  // Add a TextEditingController for each TextFormField
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -34,11 +33,10 @@ class _SignUpState extends State<SignUp> {
   }
 
   void _registerUser() async {
-    // Get the values from the text fields
     _fullName = _fullNameController.text;
     _email = _emailController.text;
     _password = _passwordController.text;
-    // Check if the fields are empty
+
     if (_fullName.isEmpty || _email.isEmpty || _password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -48,13 +46,13 @@ class _SignUpState extends State<SignUp> {
       );
       return;
     }
-    // Register the user
+
     try {
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _email,
         password: _password,
       );
-      // Save the user data to Firestore
+
       User? user = userCredential.user;
       if (user != null) {
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
@@ -63,8 +61,8 @@ class _SignUpState extends State<SignUp> {
           'uid': user.uid,
         });
       }
-      // Navigate to the home screen
-      Navigator.pushNamed(context, '/home');
+
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -85,7 +83,6 @@ class _SignUpState extends State<SignUp> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back Button
               IconButton(
                 icon: Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () {
@@ -93,7 +90,6 @@ class _SignUpState extends State<SignUp> {
                 },
               ),
               SizedBox(height: 20),
-              // Full name
               TextFormField(
                 controller: _fullNameController,
                 style: TextStyle(color: Colors.white),
@@ -111,7 +107,6 @@ class _SignUpState extends State<SignUp> {
                 ),
               ),
               SizedBox(height: 20),
-              // Email
               TextFormField(
                 controller: _emailController,
                 style: TextStyle(color: Colors.white),
@@ -129,7 +124,6 @@ class _SignUpState extends State<SignUp> {
                 ),
               ),
               SizedBox(height: 20),
-              // Password
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -157,7 +151,6 @@ class _SignUpState extends State<SignUp> {
                 ),
               ),
               SizedBox(height: 20),
-              // Done Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
