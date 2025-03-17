@@ -30,11 +30,18 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
         children: <Widget>[
           TextField(
             controller: _descriptionController,
-            decoration: InputDecoration(labelText: 'Description'),
+            decoration: InputDecoration(
+              labelText: 'Description',
+              border: OutlineInputBorder(),
+            ),
           ),
+          SizedBox(height: 10),
           TextField(
             controller: _amountController,
-            decoration: InputDecoration(labelText: 'Amount'),
+            decoration: InputDecoration(
+              labelText: 'Amount',
+              border: OutlineInputBorder(),
+            ),
             keyboardType: TextInputType.number,
           ),
           SizedBox(height: 20),

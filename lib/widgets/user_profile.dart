@@ -22,6 +22,7 @@ class UserProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _getUserData(),
         builder: (context, snapshot) {
@@ -36,23 +37,41 @@ class UserProfileScreen extends StatelessWidget {
           }
 
           final userData = snapshot.data!;
-          return Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Full Name: ${userData['displayName']}', style: TextStyle(fontSize: 18)),
-                SizedBox(height: 10),
-                Text('Email: ${userData['email']}', style: TextStyle(fontSize: 18)),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => _logout(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+          return SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  
+                  Card(
+                    child: ListTile(
+                      leading: Icon(Icons.person),
+                      title: Text('Full Name', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      subtitle: Text(userData['displayName'], style: TextStyle(fontSize: 16)),
+                    ),
                   ),
-                  child: const Text('Logout'),
-                ),
-              ],
+                  SizedBox(height: 10),
+                  Card(
+                    child: ListTile(
+                      leading: Icon(Icons.email),
+                      title: Text('Email', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      subtitle: Text(userData['email'], style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Center(
+                    child: ElevatedButton(
+                      onPressed: () => _logout(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                      ),
+                      child: const Text('Logout', style: TextStyle(fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         },

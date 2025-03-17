@@ -24,7 +24,7 @@ class _ExpensesListState extends State<ExpensesList> {
 
     return StreamBuilder<QuerySnapshot>(
       stream:
-          _expensesCollection.where('userId', isEqualTo: user.uid).snapshots(),
+          _expensesCollection.where('paidBy', isEqualTo: user.uid).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));
@@ -54,7 +54,7 @@ class _ExpensesListState extends State<ExpensesList> {
                     fontWeight: FontWeight.bold,
                     color: Colors.white),
               ),
-              subtitle: Text('Amount: \$${expense.amount.toStringAsFixed(2)}'),
+              subtitle: Text('Amount: ${expense.amount.toStringAsFixed(2)}'),
               trailing: IconButton(
                 icon: Icon(Icons.delete),
                 onPressed: () async {

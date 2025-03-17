@@ -38,7 +38,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
         final memberData = {
           'id': memberId,
           'email': email,
-          'fullName': user['fullName'],
+          'fullName': user['displayName'],
           'balance': 0.0, // Initialize balance to 0
         };
         await FirebaseFirestore.instance
