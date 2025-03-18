@@ -32,55 +32,85 @@ class _SignUpState extends State<SignUp> {
     });
   }
 
-  void _registerUser() async {
-    _fullName = _fullNameController.text;
-    _email = _emailController.text;
-    _password = _passwordController.text;
-
-    if (_fullName.isEmpty || _email.isEmpty || _password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill all the fields'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _email,
-        password: _password,
-      );
-
-      User? user = userCredential.user;
-      if (user != null) {
-        await user.sendEmailVerification();
-
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-          'displayName': _fullName,
-          'email': _email,
-          'uid': user.uid,
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Verification email sent. Please check your inbox.'),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        Navigator.pushNamedAndRemoveUntil(context, '/login_signup', (route) => false);
-      }
-    } on FirebaseAuthException catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.message}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+String? _isPasswordStrong(String password) {
+  if (password.length < 8) {
+    return 'Password must be at least 8 characters long.';
   }
+  if (!RegExp(r'^(?=.*[a-z])').hasMatch(password)) {
+    return 'Password must include at least one lowercase letter.';
+  }
+  if (!RegExp(r'^(?=.*[A-Z])').hasMatch(password)) {
+    return 'Password must include at least one uppercase letter.';
+  }
+  if (!RegExp(r'^(?=.*\d)').hasMatch(password)) {
+    return 'Password must include at least one number.';
+  }
+  if (!RegExp(r'^(?=.*[@$!%*?&])').hasMatch(password)) {
+    return 'Password must include at least one special character.';
+  }
+  return null;
+}
+
+void _registerUser() async {
+  _fullName = _fullNameController.text;
+  _email = _emailController.text;
+  _password = _passwordController.text;
+
+  if (_fullName.isEmpty || _email.isEmpty || _password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Please fill all the fields'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  String? passwordError = _isPasswordStrong(_password);
+  if (passwordError != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(passwordError),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
+  }
+
+  try {
+    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: _email,
+      password: _password,
+    );
+
+    User? user = userCredential.user;
+    if (user != null) {
+      await user.sendEmailVerification();
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'displayName': _fullName,
+        'email': _email,
+        'uid': user.uid,
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Verification email sent. Please check your inbox.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushNamedAndRemoveUntil(context, '/login_signup', (route) => false);
+    }
+  } on FirebaseAuthException catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Error: ${e.message}'),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -168,7 +198,7 @@ class _SignUpState extends State<SignUp> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF21A179),
                   ),
-                  child: Text('Done'),
+                  child: Text('Done' , style: TextStyle(fontSize: 16 ,color: Colors.white)),
                 ),
               ),
               SizedBox(height: 20),

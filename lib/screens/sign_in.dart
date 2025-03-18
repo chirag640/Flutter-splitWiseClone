@@ -103,7 +103,7 @@ class _SignInState extends State<SignIn> {
               SizedBox(height: 20),
               TextFormField(
                 controller: _passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 style: TextStyle(color: Colors.white),
                 decoration: InputDecoration(
                   labelText: 'Password',
