@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:splitwise/widgets/reset_password.dart';
 
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
@@ -148,9 +149,7 @@ class _SignInState extends State<SignIn> {
                 ),
               ),
               SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
+              Center(
                 child: ElevatedButton(
                   onPressed: _signInUser,
                   style: ElevatedButton.styleFrom(
@@ -160,6 +159,17 @@ class _SignInState extends State<SignIn> {
                 ),
               ),
               SizedBox(height: 20),
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ResetPasswordScreen()),
+                    );
+                  },
+                  child: Text('Forgot Password?', style: TextStyle(color: Colors.white)),
+                ),
+              ),
             ],
           ),
         ),
