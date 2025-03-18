@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -93,6 +94,11 @@ void _registerUser() async {
         'uid': user.uid,
       });
 
+      // Save email and password
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString('saved_email', _email);
+      await prefs.setString('saved_password', _password);
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Verification email sent. Please check your inbox.'),
@@ -111,7 +117,6 @@ void _registerUser() async {
     );
   }
 }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
