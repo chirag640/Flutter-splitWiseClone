@@ -22,6 +22,12 @@ class _HomeState extends State<Home> {
     BalanceScreen(),
     UserProfileScreen(),
   ];
+  static const List<String> _titles = <String>[
+    'Expenses',
+    'Groups',
+    'Balance',
+    'Profile',
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -46,42 +52,56 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Splitwise'),
+        backgroundColor: Colors.black,
+        title:  Text(_titles[_selectedIndex], style: TextStyle(color: Colors.white)),
+        elevation: 0,
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex),
       ),
-      floatingActionButton: _selectedIndex != 2
+      floatingActionButton: _selectedIndex != 2 && _selectedIndex != 3
           ? FloatingActionButton(
               onPressed: _onAddButtonPressed,
               backgroundColor: Colors.green,
-              child: const Icon(Icons.add),
+              child: const Icon(Icons.add, color: Colors.white),
             )
           : null,
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Expenses',
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(30),
+          child: BottomNavigationBar(
+            backgroundColor: const Color(0xFF1E1E1E),
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.list),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.group),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.wallet),
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: '',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Colors.green,
+            unselectedItemColor: Colors.grey,
+            showSelectedLabels: false,
+            showUnselectedLabels: false,
+            onTap: _onItemTapped,
+            type: BottomNavigationBarType.fixed,
+            elevation: 10,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.group),
-            label: 'Groups',
-          ),
-           BottomNavigationBarItem(
-            icon: Icon(Icons.wallet),
-            label: 'Balance',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
+        ),
       ),
     );
   }

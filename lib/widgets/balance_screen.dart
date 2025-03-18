@@ -60,6 +60,7 @@ class _BalanceScreenState extends State<BalanceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       body: FutureBuilder<Map<String, double>>(
         future: _calculateNetBalances(),
         builder: (context, snapshot) {

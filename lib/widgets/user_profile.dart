@@ -22,6 +22,7 @@ class UserProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
 
       body: FutureBuilder<Map<String, dynamic>?>(
         future: _getUserData(),

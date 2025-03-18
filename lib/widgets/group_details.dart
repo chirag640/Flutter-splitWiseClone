@@ -240,6 +240,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: header(context),
       body: Column(
         children: [
@@ -254,6 +255,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
 
   FloatingActionButton addBtn(BuildContext context) {
     return FloatingActionButton(
+      backgroundColor: Colors.green,
       onPressed: () {
         showDialog(
           context: context,
@@ -604,6 +606,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
 
   AppBar header(BuildContext context) {
     return AppBar(
+      backgroundColor: Colors.black,
       title: Text('Group Details'),
       actions: [
         IconButton(
