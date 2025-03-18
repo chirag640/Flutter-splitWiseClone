@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:splitwise/widgets/add_expenses.dart';
 import 'package:splitwise/widgets/add_group.dart';
+import 'package:splitwise/widgets/balance_screen.dart';
 import 'package:splitwise/widgets/expenses_list.dart';
 import 'package:splitwise/widgets/group_list.dart';
 import 'package:splitwise/widgets/user_profile.dart';
-
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -19,6 +19,7 @@ class _HomeState extends State<Home> {
   static final List<Widget> _widgetOptions = <Widget>[
     ExpensesList(),
     GroupsList(),
+    BalanceScreen(),
     UserProfileScreen(),
   ];
 
@@ -68,6 +69,10 @@ class _HomeState extends State<Home> {
             icon: Icon(Icons.group),
             label: 'Groups',
           ),
+           BottomNavigationBarItem(
+            icon: Icon(Icons.wallet),
+            label: 'Balance',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
@@ -75,6 +80,7 @@ class _HomeState extends State<Home> {
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
       ),
     );
