@@ -22,7 +22,7 @@ Splitwise is a Flutter application that helps users manage and split expenses wi
 
 1. Clone the repository:
     ```sh
-    git clone https://github.com/chirag640/splitwise.git
+    git clone https://github.com/chirag640/Flutter-splitWiseClone.git
     cd splitwise
     ```
 
