@@ -5,12 +5,30 @@ import 'package:splitwise/screens/home.dart';
 import 'package:splitwise/screens/login_signup.dart';
 import 'package:splitwise/screens/sign_in.dart';
 import 'package:splitwise/screens/sign_up.dart';
+import 'package:splitwise/services/notification_service.dart';
 import 'package:splitwise/widgets/user_profile.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await NotificationService.initialize(); // Use the class name to call the static method
+  await FirebaseMessaging.instance.requestPermission();
+
+  // Listen for foreground messages
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    print("Foreground message received: ${message.notification?.title}, ${message.notification?.body}");
+  });
+
+  // Handle background messages
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(const MainApp());
+}
+
+// Background message handler
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  print("Background message received: ${message.notification?.title}, ${message.notification?.body}");
 }
 
 class MainApp extends StatelessWidget {

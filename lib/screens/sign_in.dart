@@ -62,6 +62,9 @@ class _SignInState extends State<SignIn> {
     }
 
     try {
+      // Set the locale for Firebase Authentication
+      FirebaseAuth.instance.setLanguageCode('en'); // Change 'en' to your desired locale
+
       UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,

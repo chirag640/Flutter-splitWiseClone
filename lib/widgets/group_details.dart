@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:splitwise/services/notification_service.dart';
 import 'package:uuid/uuid.dart';
 
 class GroupDetailsScreen extends StatefulWidget {
@@ -39,6 +40,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           'id': memberId,
           'email': email,
           'fullName': user['displayName'],
+          'token': user['token'], // Fetch the token from the users collection
           'balance': 0.0, // Initialize balance to 0
         };
         await FirebaseFirestore.instance
@@ -103,8 +105,12 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           .doc(expenseId)
           .set(expenseData);
 
+      List<String> tokens = [];
       for (var member in members) {
         final memberId = member['id'];
+        if (memberId != user.uid) {
+          tokens.add(member['token']); // Collect tokens for notifications
+        }
         await FirebaseFirestore.instance
             .collection('groups')
             .doc(widget.groupId)
@@ -123,6 +129,21 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           .update({
         'balance': FieldValue.increment(amount),
       });
+
+      // Send notifications
+      try {
+         final notificationService = NotificationService();
+      await notificationService.sendNotificationToMultiple(
+        tokens: tokens,
+        title: "New Expense Added",
+        body: "$description added by ${user.displayName}. Your share: $share",
+      );
+      print("successfully sending notification");
+      } catch (e) {
+        print("Error sending notification: $e");
+
+      } 
+     
 
       _expenseDescriptionController.clear();
       _expenseAmountController.clear();

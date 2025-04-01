@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class SignUp extends StatefulWidget {
   const SignUp({super.key});
@@ -79,6 +80,9 @@ void _registerUser() async {
   }
 
   try {
+    // Set the locale for Firebase Authentication
+    FirebaseAuth.instance.setLanguageCode('en'); // Change 'en' to your desired locale
+
     UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
       email: _email,
       password: _password,
@@ -88,10 +92,14 @@ void _registerUser() async {
     if (user != null) {
       await user.sendEmailVerification();
 
+      // Generate FCM token
+      String? token = await FirebaseMessaging.instance.getToken();
+
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'displayName': _fullName,
         'email': _email,
         'uid': user.uid,
+        'token': token, // Save the token
       });
 
       // Save email and password

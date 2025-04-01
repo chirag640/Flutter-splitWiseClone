@@ -26,6 +26,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
     if (groupName.isNotEmpty && user != null) {
       final userSnapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       final fullName = userSnapshot.data()?['displayName'] ?? '';
+      final token = userSnapshot.data()?['token'] ?? ''; // Fetch the token
 
       final groupId = Uuid().v4();
       final groupData = {
@@ -40,6 +41,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
         'id': user.uid,
         'email': user.email,
         'fullName': fullName,
+        'token': token, // Save the token
         'balance': 0.0,
       };
       await FirebaseFirestore.instance
