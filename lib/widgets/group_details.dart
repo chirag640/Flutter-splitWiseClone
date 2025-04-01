@@ -273,6 +273,72 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
     return userSnapshot.data()?['displayName'] ?? 'Unknown';
   }
 
+  void _deleteGroup() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You are not authorized to delete this group'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final groupSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupId)
+        .get();
+
+    if (!groupSnapshot.exists) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Group does not exist'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final groupData = groupSnapshot.data();
+    final createdBy = groupData?['createdBy'];
+    final expensesSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupId)
+        .collection('expenses')
+        .get();
+
+    if (createdBy != user.uid) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Only the group creator can delete this group'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (expensesSnapshot.docs.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cannot delete group with existing expenses'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    await FirebaseFirestore.instance.collection('groups').doc(widget.groupId).delete();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Group deleted successfully'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    Navigator.pop(context); // Navigate back after deletion
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -667,6 +733,31 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                       Navigator.pop(context);
                     },
                     child: Text('Add'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        IconButton(
+          icon: Icon(Icons.delete),
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: Text('Delete Group'),
+                content: Text('Are you sure you want to delete this group?'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      _deleteGroup();
+                      Navigator.pop(context);
+                    },
+                    child: Text('Delete', style: TextStyle(color: Colors.red)),
                   ),
                 ],
               ),
