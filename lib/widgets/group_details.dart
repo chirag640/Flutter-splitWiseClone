@@ -80,6 +80,23 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (description.isNotEmpty && amount > 0 && user != null) {
+      // Fetch the group name
+      final groupSnapshot = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .get();
+      final groupName = groupSnapshot.data()?['groupName'] ?? 'Unknown Group';
+
+      // Ensure the user's display name is not null
+      String userName = user.displayName ?? '';
+      if (userName.isEmpty) {
+        final userSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        userName = userSnapshot.data()?['displayName'] ?? 'Unknown User';
+      }
+
       final expenseId = Uuid().v4();
       final membersSnapshot = await FirebaseFirestore.instance
           .collection('groups')
@@ -132,18 +149,16 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
 
       // Send notifications
       try {
-         final notificationService = NotificationService();
-      await notificationService.sendNotificationToMultiple(
-        tokens: tokens,
-        title: "New Expense Added",
-        body: "$description added by ${user.displayName}. Your share: $share",
-      );
-      print("successfully sending notification");
+        final notificationService = NotificationService();
+        await notificationService.sendNotificationToMultiple(
+          tokens: tokens,
+          title: "New Expense Added to $groupName",
+          body: "$description added by $userName. Your share: $share",
+        );
+        print("Successfully sent notification");
       } catch (e) {
         print("Error sending notification: $e");
-
-      } 
-     
+      }
 
       _expenseDescriptionController.clear();
       _expenseAmountController.clear();
