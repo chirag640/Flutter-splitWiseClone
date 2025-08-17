@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:splitwise/theme.dart';
 
 class BalanceScreen extends StatefulWidget {
   const BalanceScreen({super.key});
@@ -59,8 +61,8 @@ class _BalanceScreenState extends State<BalanceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormatter = NumberFormat.currency(symbol: '\$', decimalDigits: 2);
     return Scaffold(
-      backgroundColor: Colors.black,
       body: FutureBuilder<Map<String, double>>(
         future: _calculateNetBalances(),
         builder: (context, snapshot) {
@@ -73,30 +75,41 @@ class _BalanceScreenState extends State<BalanceScreen> {
 
           final balances = snapshot.data ?? {};
           if (balances.isEmpty) {
-            return Center(child: Text('No balances found.'));
+            return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.account_balance_wallet, size: 64, color: Colors.grey),
+              SizedBox(height: 12),
+              Text('No balances found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              SizedBox(height: 6),
+              Text('Create or join a group to start tracking balances', style: TextStyle(color: Colors.grey)),
+            ]));
           }
 
-          return ListView.builder(
-            itemCount: balances.length,
-            itemBuilder: (context, index) {
-              final entry = balances.entries.elementAt(index);
-              final memberName = entry.key;
-              final balance = entry.value;
-              return Card(
-                margin: EdgeInsets.all(10),
-                child: ListTile(
-                  title: Text(memberName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  subtitle: Text(
-                    balance >= 0
-                        ? 'You lent $balance to $memberName'
-                        : 'You borrowed ${-balance} from $memberName',
-                    style: TextStyle(
-                      color: balance >= 0 ? Colors.green : Colors.red,
-                    ),
+          return RefreshIndicator(
+            onRefresh: () async => await Future.delayed(Duration(milliseconds: 300)),
+            child: ListView.builder(
+              itemCount: balances.length,
+              itemBuilder: (context, index) {
+                final entry = balances.entries.elementAt(index);
+                final memberName = entry.key;
+                final balance = entry.value;
+                final isPositive = balance >= 0;
+                return Card(
+                  margin: EdgeInsets.all(10),
+                  child: ListTile(
+                    title: Text(memberName, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(isPositive ? Icons.arrow_upward : Icons.arrow_downward, color: isPositive ? Colors.green : Colors.red, size: 18),
+                      SizedBox(width: 8),
+                      Text(
+                        currencyFormatter.format(isPositive ? balance : -balance),
+                        style: TextStyle(color: isPositive ? Colors.green : Colors.red, fontWeight: FontWeight.w600),
+                      ),
+                    ]),
+                    subtitle: Text(isPositive ? 'You are owed' : 'You owe', style: TextStyle(color: isPositive ? Colors.green : Colors.red)),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           );
         },
       ),
