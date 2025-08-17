@@ -96,62 +96,114 @@ class _ExpensesListState extends State<ExpensesList> {
                   child: Icon(Icons.delete, color: Colors.white),
                 ),
                 confirmDismiss: (direction) async {
-                  if (direction == DismissDirection.startToEnd) {
+                    if (direction == DismissDirection.startToEnd) {
                     // Swipe right to update
                     _expenseDescriptionController.text = expense.description;
                     _expenseAmountController.text = expense.amount.toString();
-                    final shouldUpdate = await showDialog<bool>(
+                    final shouldUpdate = await showModalBottomSheet<bool>(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('Update Expense'),
-                        content: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            TextField(
-                              controller: _expenseDescriptionController,
-                              decoration: InputDecoration(labelText: 'Description'),
+                      isScrollControlled: true,
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+                      builder: (context) {
+                        final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+                        return Material(
+                          color: Theme.of(context).cardColor,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                          child: SafeArea(
+                            top: false,
+                            child: AnimatedPadding(
+                              duration: const Duration(milliseconds: 180),
+                              curve: Curves.easeOut,
+                              padding: EdgeInsets.only(bottom: bottomInset),
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Center(
+                                      child: Container(
+                                        width: 42,
+                                        height: 5,
+                                        margin: const EdgeInsets.only(bottom: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.withOpacity(0.4),
+                                          borderRadius: BorderRadius.circular(3),
+                                        ),
+                                      ),
+                                    ),
+                                    Row(children: [
+                                      Expanded(child: Text('Update Expense', style: Theme.of(context).textTheme.titleLarge)),
+                                      IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(Icons.close))
+                                    ]),
+                                    const SizedBox(height: 4),
+                                    TextField(controller: _expenseDescriptionController, decoration: const InputDecoration(labelText: 'Description'), textInputAction: TextInputAction.next),
+                                    const SizedBox(height: 12),
+                                    TextField(controller: _expenseAmountController, decoration: const InputDecoration(labelText: 'Amount', prefixText: '\$'), keyboardType: TextInputType.number, textInputAction: TextInputAction.done),
+                                    const SizedBox(height: 20),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)), child: const Text('Save')),
+                                    )
+                                  ],
+                                ),
+                              ),
                             ),
-                            TextField(
-                              controller: _expenseAmountController,
-                              decoration: InputDecoration(labelText: 'Amount'),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ],
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: Text('Cancel'),
                           ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: Text('Update'),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                     if (shouldUpdate == true) {
                       await _updateExpense(expense.id, _expenseDescriptionController.text, double.parse(_expenseAmountController.text));
                     }
                     return false;
-                  } else if (direction == DismissDirection.endToStart) {
+                    } else if (direction == DismissDirection.endToStart) {
                     // Swipe left to delete
-                    final shouldDelete = await showDialog<bool>(
+                    final shouldDelete = await showModalBottomSheet<bool>(
                       context: context,
-                      builder: (context) => AlertDialog(
-                        title: Text('Delete Expense'),
-                        content: Text('Are you sure you want to delete this expense?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: Text('Cancel'),
+                      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+                      builder: (context) {
+                        return Material(
+                          color: Theme.of(context).cardColor,
+                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                          child: SafeArea(
+                            top: false,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                              child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                Center(
+                                  child: Container(
+                                    width: 42,
+                                    height: 5,
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.4),
+                                      borderRadius: BorderRadius.circular(3),
+                                    ),
+                                  ),
+                                ),
+                                Row(children:[
+                                  Expanded(child: Text('Delete Expense', style: Theme.of(context).textTheme.titleLarge)),
+                                  IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(Icons.close))
+                                ]),
+                                const SizedBox(height: 8),
+                                const Text('Are you sure you want to delete this expense?'),
+                                const SizedBox(height: 20),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.symmetric(vertical: 14)),
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: const Text('Delete'),
+                                  ),
+                                ),
+                              ]),
+                            ),
                           ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            child: Text('Delete', style: TextStyle(color: Colors.red)),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                     if (shouldDelete == true) {
                       await _deleteExpense(expense.id);
@@ -161,7 +213,7 @@ class _ExpensesListState extends State<ExpensesList> {
                   }
                   return false;
                 },
-                child: Card(
+                  child: Card(
                   child: ListTile(
                     title: Text(
                       expense.description,
@@ -175,7 +227,7 @@ class _ExpensesListState extends State<ExpensesList> {
                         color: expense.amount >= 0 ? Colors.green : Colors.red,
                       ),
                     ),
-                    subtitle: Text(expense.createdAt != null ? DateFormat.yMMMd().format(expense.createdAt.toDate()) : ''),
+                    subtitle: Text(''),
                   ),
                 ),
               );

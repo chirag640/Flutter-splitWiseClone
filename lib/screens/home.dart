@@ -37,13 +37,19 @@ class _HomeState extends State<Home> {
 
   void _onAddButtonPressed() {
     if (_selectedIndex == 0) {
-      showDialog(
+  showModalBottomSheet(
         context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
         builder: (context) => AddExpenseScreen(),
       );
     } else if (_selectedIndex == 1) {
-      showDialog(
+  showModalBottomSheet(
         context: context,
+        isScrollControlled: true,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
         builder: (context) => AddGroupScreen(),
       );
     }

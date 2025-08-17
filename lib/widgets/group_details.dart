@@ -488,7 +488,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: header(context),
       body: Column(
         children: [
@@ -497,7 +497,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           expenses(),
         ],
       ),
-      floatingActionButton: addBtn(context),
+  floatingActionButton: addBtn(context),
     );
   }
 
@@ -506,38 +506,74 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
       tooltip: 'Add expense',
       backgroundColor: Theme.of(context).colorScheme.primary,
       onPressed: () {
-        showDialog(
+        showModalBottomSheet(
           context: context,
-          builder: (context) => AlertDialog(
-            title: Text('Add Expense'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _expenseDescriptionController,
-                  decoration: InputDecoration(labelText: 'Description', semanticCounterText: 'description input'),
+          isScrollControlled: true,
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+          builder: (context) {
+            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+            return Material(
+              color: Theme.of(context).cardColor,
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+              child: SafeArea(
+                top: false,
+                child: AnimatedPadding(
+                  padding: EdgeInsets.only(bottom: bottomInset),
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOut,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            width: 42,
+                            height: 5,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(3),
+                            ),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            Expanded(child: Text('Add Expense', style: Theme.of(context).textTheme.titleLarge)),
+                            IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(Icons.close))
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        TextField(
+                          controller: _expenseDescriptionController,
+                          decoration: const InputDecoration(labelText: 'Description'),
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _expenseAmountController,
+                          decoration: const InputDecoration(labelText: 'Amount', prefixText: '\$'),
+                          keyboardType: TextInputType.number,
+                          textInputAction: TextInputAction.done,
+                        ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () { _addExpense(); Navigator.pop(context); },
+                            style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                            child: const Text('Save'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                TextField(
-                  controller: _expenseAmountController,
-                  decoration: InputDecoration(labelText: 'Amount'),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
               ),
-              TextButton(
-                onPressed: () {
-                  _addExpense();
-                  Navigator.pop(context);
-                },
-                child: Text('Add'),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
       child: Icon(Icons.add),
@@ -797,9 +833,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                       // balances: { otherMemberId: { 'displayName': name, 'balance': value } }
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: balances.entries.map((entry) {
-                          final otherMemberId = entry.key;
-                          final info = entry.value;
+              children: balances.entries.map((entry) {
+                final info = entry.value;
                           final otherMemberName = info['displayName'] ?? 'Unknown';
                           final balance = (info['balance'] is num) ? (info['balance'] as num).toDouble() : 0.0;
                           return Text(
@@ -873,59 +908,121 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
 
   AppBar header(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.black,
+      backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
       title: Text('Group Details'),
       actions: [
         IconButton(
           icon: Icon(Icons.person_add),
           onPressed: () {
-            showDialog(
+            showModalBottomSheet(
               context: context,
-              builder: (context) => AlertDialog(
-                title: Text('Add Member'),
-                content: TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel'),
+              isScrollControlled: true,
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+              builder: (context) {
+                final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+                return Material(
+                  color: Theme.of(context).cardColor,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                  child: SafeArea(
+                    top: false,
+                    child: AnimatedPadding(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      padding: EdgeInsets.only(bottom: bottomInset),
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Center(
+                              child: Container(
+                                width: 42,
+                                height: 5,
+                                margin: const EdgeInsets.only(bottom: 12),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.4),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                              ),
+                            ),
+                            Row(children: [
+                              Expanded(child: Text('Add Member', style: Theme.of(context).textTheme.titleLarge)),
+                              IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(Icons.close))
+                            ]),
+                            const SizedBox(height: 4),
+                            TextField(controller: _emailController, decoration: const InputDecoration(labelText: 'Email'), textInputAction: TextInputAction.done),
+                            const SizedBox(height: 20),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () { _addMember(); Navigator.pop(context); },
+                                style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                                child: const Text('Save'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      _addMember();
-                      Navigator.pop(context);
-                    },
-                    child: Text('Add'),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
         ),
         IconButton(
           icon: Icon(Icons.delete),
           onPressed: () {
-            showDialog(
+            showModalBottomSheet(
               context: context,
-              builder: (context) => AlertDialog(
-                title: Text('Delete Group'),
-                content: Text('Are you sure you want to delete this group?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('Cancel'),
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(16))),
+              builder: (context) {
+                return Material(
+                  color: Theme.of(context).cardColor,
+                  shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+                  child: SafeArea(
+                    top: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 42,
+                              height: 5,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.grey.withOpacity(0.4),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                            ),
+                          ),
+                          Row(children: [
+                            Expanded(child: Text('Delete Group', style: Theme.of(context).textTheme.titleLarge)),
+                            IconButton(onPressed: () => Navigator.of(context).maybePop(), icon: const Icon(Icons.close))
+                          ]),
+                          const SizedBox(height: 4),
+                          const Text('Are you sure you want to delete this group?'),
+                          const SizedBox(height: 20),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: const EdgeInsets.symmetric(vertical: 14)),
+                              onPressed: () { _deleteGroup(); Navigator.pop(context); },
+                              child: const Text('Delete'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  TextButton(
-                    onPressed: () {
-                      _deleteGroup();
-                      Navigator.pop(context);
-                    },
-                    child: Text('Delete', style: TextStyle(color: Colors.red)),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
         ),

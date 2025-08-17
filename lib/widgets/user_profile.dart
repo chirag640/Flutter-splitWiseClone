@@ -90,43 +90,59 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   void _showUpdateNameDialog(BuildContext context, String currentName) {
     final TextEditingController _nameController = TextEditingController(text: currentName);
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) {
-        return AlertDialog(
-          title: Text('Update Name'),
-          content: TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: 'Full Name',
-              border: OutlineInputBorder(),
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 16, right: 16, top: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Update Name', style: Theme.of(context).textTheme.titleLarge),
+                SizedBox(height: 12),
+                TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Full Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(onPressed: () => Navigator.of(context).pop(), child: Text('Cancel')),
+                    SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        final newName = _nameController.text;
+                        if (newName.isNotEmpty) {
+                          _updateUserName(context, newName);
+                          Navigator.of(context).pop();
+                        } else {
+                          _scaffoldMessengerKey.currentState?.showSnackBar(
+                            SnackBar(
+                              content: Text('Name cannot be empty'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      child: Text('Update'),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12),
+              ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                final newName = _nameController.text;
-                if (newName.isNotEmpty) {
-                  _updateUserName(context, newName);
-                  Navigator.of(context).pop();
-                } else {
-                  _scaffoldMessengerKey.currentState?.showSnackBar(
-                    SnackBar(
-                      content: Text('Name cannot be empty'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: Text('Update'),
-            ),
-          ],
         );
       },
     );

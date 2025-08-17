@@ -69,37 +69,79 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text('Add Group'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: _groupNameController,
-            enabled: !_isSubmitting,
-            decoration: InputDecoration(
-              labelText: 'Group Name',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.text,
-            textInputAction: TextInputAction.done,
-          ),
-          SizedBox(height: 20),
-        ],
+    // Bottom sheet style content so this widget can be shown via showModalBottomSheet
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Material(
+      color: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isSubmitting ? null : () {
-            Navigator.of(context).pop();
-          },
-          child: Text('Cancel'),
+      child: SafeArea(
+        top: false,
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.55,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 5,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.4),
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text('Create Group', style: Theme.of(context).textTheme.titleLarge),
+                      ),
+                      IconButton(
+                        tooltip: 'Close',
+                        onPressed: _isSubmitting ? null : () => Navigator.of(context).maybePop(),
+                        icon: const Icon(Icons.close),
+                      )
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  TextField(
+                    controller: _groupNameController,
+                    enabled: !_isSubmitting,
+                    decoration: const InputDecoration(
+                      labelText: 'Group Name',
+                      border: OutlineInputBorder(),
+                    ),
+                    textInputAction: TextInputAction.done,
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isSubmitting ? null : _addGroup,
+                      style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14)),
+                      child: _isSubmitting
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Text('Save'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        TextButton(
-          onPressed: _isSubmitting ? null : _addGroup,
-          child: _isSubmitting ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text('Add Group'),
-          style: TextButton.styleFrom()
-        ),
-      ],
+      ),
     );
   }
 }
