@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:splitwise/theme.dart';
 
 class LoginSignup extends StatelessWidget {
   const LoginSignup({super.key});
@@ -7,7 +8,6 @@ class LoginSignup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -18,15 +18,11 @@ class LoginSignup extends StatelessWidget {
               'assets/images/logo.png',
               height: 120,
             ),
-            SizedBox(height: 20),
+            SizedBox(height: AppSpacing.md),
             // Title
             Text(
               'Splitwise',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              style: Theme.of(context).textTheme.titleLarge,
             ),
             Spacer(),
             // Sign up button
@@ -37,13 +33,12 @@ class LoginSignup extends StatelessWidget {
                   Navigator.pushNamed(context, '/sign_up');
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF21A179), // Green color
                   minimumSize: Size(double.infinity, 50),
                 ),
-                child: Text('Sign up' , style: TextStyle(color: Colors.white)),
+                child: Text('Sign up'),
               ),
             ),
-            SizedBox(height: 12),
+            SizedBox(height: AppSpacing.sm),
             // Log in button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40.0),
@@ -52,37 +47,24 @@ class LoginSignup extends StatelessWidget {
                   Navigator.pushNamed(context, '/sign_in');
                 },
                 style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.white),
                   minimumSize: Size(double.infinity, 50),
                 ),
-                child: Text(
-                  'Log in',
-                  style: TextStyle(color: Colors.white),
-                ),
+                child: Text('Log in'),
               ),
             ),
-            SizedBox(height: 24),
+            SizedBox(height: AppSpacing.lg),
             // Terms and privacy
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                TextButton(
-                  onPressed: () {},
-                  child: Text('Terms', style: TextStyle(color: Colors.white)),
-                ),
-                Text('|', style: TextStyle(color: Colors.white)),
-                TextButton(
-                  onPressed: () {},
-                  child: Text('Privacy Policy', style: TextStyle(color: Colors.white)),
-                ),
-                Text('|', style: TextStyle(color: Colors.white)),
-                TextButton(
-                  onPressed: () {},
-                  child: Text('Contact us', style: TextStyle(color: Colors.white)),
-                ),
+                TextButton(onPressed: () {}, child: Text('Terms')),
+                Text('|'),
+                TextButton(onPressed: () {}, child: Text('Privacy Policy')),
+                Text('|'),
+                TextButton(onPressed: () {}, child: Text('Contact us')),
               ],
             ),
-            SizedBox(height: 16),
+            SizedBox(height: AppSpacing.md),
           ],
         ),
       ),

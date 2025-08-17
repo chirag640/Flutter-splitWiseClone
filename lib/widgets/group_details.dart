@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:splitwise/services/notification_service.dart';
 import 'package:uuid/uuid.dart';
+import 'package:logging/logging.dart';
 
 class GroupDetailsScreen extends StatefulWidget {
   final String groupId;
@@ -14,6 +15,7 @@ class GroupDetailsScreen extends StatefulWidget {
 }
 
 class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
+  final Logger _logger = Logger('GroupDetailsScreen');
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _expenseDescriptionController = TextEditingController();
   final TextEditingController _expenseAmountController = TextEditingController();
@@ -104,15 +106,33 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           .collection('members')
           .get();
       final members = membersSnapshot.docs;
-      final share = (amount / members.length).ceil();
 
+      if (members.isEmpty) {
+        // No members to split with — prevent division by zero and inform the user
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No members in group to split the expense.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Distribute amount in integer cents to avoid floating point rounding errors.
+      final int amountCents = (amount * 100).round();
+      final int n = members.length;
+      final int baseShare = amountCents ~/ n; // integer cents per member
+      final int remainder = amountCents % n; // extra cents to distribute
+
+      // Store base share as double and remainder for traceability
       final expenseData = {
         'id': expenseId,
         'description': description,
         'amount': amount,
         'createdBy': user.uid,
         'createdAt': Timestamp.now(),
-        'share': share,
+        'share': baseShare / 100.0,
+        'share_remainder_cents': remainder,
       };
 
       await FirebaseFirestore.instance
@@ -123,41 +143,65 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
           .set(expenseData);
 
       List<String> tokens = [];
-      for (var member in members) {
+      final List<Future> updateFutures = [];
+      // Distribute cents fairly: the first `remainder` members get +1 cent
+      for (int i = 0; i < members.length; i++) {
+        final member = members[i];
         final memberId = member['id'];
         if (memberId != user.uid) {
           tokens.add(member['token']); // Collect tokens for notifications
         }
-        await FirebaseFirestore.instance
+
+        final int memberShareCents = baseShare + (i < remainder ? 1 : 0);
+        final double memberShare = memberShareCents / 100.0;
+
+        updateFutures.add(FirebaseFirestore.instance
             .collection('groups')
             .doc(widget.groupId)
             .collection('members')
             .doc(memberId)
             .update({
-          'balance': FieldValue.increment(-share),
-        });
+          'balance': FieldValue.increment(-memberShare),
+        }));
       }
 
-      await FirebaseFirestore.instance
+      // Credit the payer with the total amount
+      updateFutures.add(FirebaseFirestore.instance
           .collection('groups')
           .doc(widget.groupId)
           .collection('members')
           .doc(user.uid)
           .update({
         'balance': FieldValue.increment(amount),
-      });
+      }));
 
-      // Send notifications
+      try {
+        await Future.wait(updateFutures);
+      } catch (e) {
+        _logger.severe('Error updating member balances: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to apply expense updates. Check permissions.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+    // Compute display share for notifications
+    final double displayShare = (baseShare / 100.0);
+
+    // Send notifications
       try {
         final notificationService = NotificationService();
         await notificationService.sendNotificationToMultiple(
           tokens: tokens,
-          title: "New Expense Added to $groupName",
-          body: "$description added by $userName. Your share: $share",
+      title: "New Expense Added to $groupName",
+      body: "$description added by $userName. Your share: ${displayShare.toStringAsFixed(2)}",
         );
-        print("Successfully sent notification");
+  _logger.info('Successfully sent notification');
       } catch (e) {
-        print("Error sending notification: $e");
+  _logger.severe('Error sending notification: $e');
       }
 
       _expenseDescriptionController.clear();
@@ -173,34 +217,82 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   }
 
   void _deleteExpense(String expenseId, double amount, String createdBy) async {
+    // Fetch the expense doc to obtain distribution details
+    final expenseDoc = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupId)
+        .collection('expenses')
+        .doc(expenseId)
+        .get();
+
+    if (!expenseDoc.exists) {
+      // Nothing to do
+      return;
+    }
+
+    final expenseData = expenseDoc.data() ?? {};
+    final double expenseAmount = (expenseData['amount'] is num)
+        ? (expenseData['amount'] as num).toDouble()
+        : double.tryParse('${expenseData['amount']}') ?? amount;
+
+    // Load members once
     final membersSnapshot = await FirebaseFirestore.instance
         .collection('groups')
         .doc(widget.groupId)
         .collection('members')
         .get();
     final members = membersSnapshot.docs;
-    final share = (amount / members.length).ceil();
 
-    for (var member in members) {
+    if (members.isEmpty) return;
+
+    // Determine distribution: prefer stored cents remainder if available
+    int amountCents = (expenseAmount * 100).round();
+    int baseShare = (expenseData['share'] is num)
+        ? ((expenseData['share'] as num) * 100).round() ~/ members.length
+        : amountCents ~/ members.length;
+    int remainder = expenseData['share_remainder_cents'] ?? (amountCents % members.length);
+
+    // Reverse updates in parallel
+    final List<Future> updateFutures = [];
+    for (int i = 0; i < members.length; i++) {
+      final member = members[i];
       final memberId = member['id'];
-      await FirebaseFirestore.instance
+      final int memberShareCents = baseShare + (i < remainder ? 1 : 0);
+      final double memberShare = memberShareCents / 100.0;
+
+      updateFutures.add(FirebaseFirestore.instance
           .collection('groups')
           .doc(widget.groupId)
           .collection('members')
           .doc(memberId)
           .update({
-        'balance': FieldValue.increment(share),
-      });
+        // Revert the member's balance by adding back their share
+        'balance': FieldValue.increment(memberShare),
+      }));
     }
 
-    await FirebaseFirestore.instance
+    // Debit the creator by the expense amount (revert credit)
+    updateFutures.add(FirebaseFirestore.instance
         .collection('groups')
         .doc(widget.groupId)
         .collection('members')
         .doc(createdBy)
         .update({
-      'balance': FieldValue.increment(-amount),
-    });
+      'balance': FieldValue.increment(-expenseAmount),
+    }));
+
+    try {
+      await Future.wait(updateFutures);
+    } catch (e) {
+      _logger.severe('Error reverting expense deletion updates: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to revert expense deletion. Check permissions.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     await FirebaseFirestore.instance
         .collection('groups')
@@ -215,47 +307,101 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   void _updateExpense(String expenseId, String description, double amount) async {
     final user = FirebaseAuth.instance.currentUser;
     if (description.isNotEmpty && amount > 0 && user != null) {
+      // Fetch existing expense to compute previous distribution
+      final expenseDoc = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .collection('expenses')
+          .doc(expenseId)
+          .get();
+
+      if (!expenseDoc.exists) {
+        // If expense not found, nothing to update
+        return;
+      }
+
+      final oldData = expenseDoc.data() ?? {};
+      final double oldAmount = (oldData['amount'] is num)
+          ? (oldData['amount'] as num).toDouble()
+          : double.tryParse('${oldData['amount']}') ?? 0.0;
+
+      // Load members once
       final membersSnapshot = await FirebaseFirestore.instance
           .collection('groups')
           .doc(widget.groupId)
           .collection('members')
           .get();
       final members = membersSnapshot.docs;
-      final share = (amount / members.length).ceil();
+      if (members.isEmpty) return;
 
-      final expenseData = {
-        'description': description,
-        'amount': amount,
-        'share': share,
-      };
+      // Compute old distribution
+      final int oldAmountCents = (oldAmount * 100).round();
+      final int n = members.length;
+      final int oldBaseShare = oldAmountCents ~/ n;
+      final int oldRemainder = oldData['share_remainder_cents'] ?? (oldAmountCents % n);
 
-      await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('expenses')
-          .doc(expenseId)
-          .update(expenseData);
+      // Compute new distribution
+      final int newAmountCents = (amount * 100).round();
+      final int newBaseShare = newAmountCents ~/ n;
+      final int newRemainder = newAmountCents % n;
 
-      for (var member in members) {
+      // Prepare parallel updates: for each member compute delta = newShare - oldShare
+      final List<Future> updateFutures = [];
+      for (int i = 0; i < members.length; i++) {
+        final member = members[i];
         final memberId = member['id'];
-        await FirebaseFirestore.instance
+
+        final int oldShareCents = oldBaseShare + (i < oldRemainder ? 1 : 0);
+        final int newShareCents = newBaseShare + (i < newRemainder ? 1 : 0);
+        final double delta = (newShareCents - oldShareCents) / 100.0;
+
+        // Decrease or increase member balance by delta (payer direction handled below)
+        updateFutures.add(FirebaseFirestore.instance
             .collection('groups')
             .doc(widget.groupId)
             .collection('members')
             .doc(memberId)
             .update({
-          'balance': FieldValue.increment(-share),
-        });
+          'balance': FieldValue.increment(-delta),
+        }));
       }
 
-      await FirebaseFirestore.instance
+      // Adjust payer balance by difference between new total and old total
+      final double payerDelta = amount - oldAmount; // positive if payer should be credited more
+      updateFutures.add(FirebaseFirestore.instance
           .collection('groups')
           .doc(widget.groupId)
           .collection('members')
           .doc(user.uid)
           .update({
-        'balance': FieldValue.increment(amount),
-      });
+        'balance': FieldValue.increment(payerDelta),
+      }));
+
+      // Update expense doc
+      updateFutures.add(FirebaseFirestore.instance
+          .collection('groups')
+          .doc(widget.groupId)
+          .collection('expenses')
+          .doc(expenseId)
+          .update({
+        'description': description,
+        'amount': amount,
+        'share': newBaseShare / 100.0,
+        'share_remainder_cents': newRemainder,
+      }));
+
+      try {
+        await Future.wait(updateFutures);
+      } catch (e) {
+        _logger.severe('Error updating expense and balances: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update expense. Check permissions.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
 
       setState(() {}); // Trigger a rebuild to update the UI
     } else {
@@ -637,7 +783,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                 margin: EdgeInsets.all(10),
                 child: ListTile(
                   title: Text(member['fullName'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  subtitle: FutureBuilder<Map<String, double>>(
+                  subtitle: FutureBuilder<Map<String, Map<String, dynamic>>>(
                     future: _getMemberBalances(member['id']),
                     builder: (context, balanceSnapshot) {
                       if (balanceSnapshot.connectionState == ConnectionState.waiting) {
@@ -647,11 +793,14 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
                         return Text('Error: ${balanceSnapshot.error}');
                       }
                       final balances = balanceSnapshot.data ?? {};
+                      // balances: { otherMemberId: { 'displayName': name, 'balance': value } }
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: balances.entries.map((entry) {
-                          final otherMemberName = entry.key;
-                          final balance = entry.value;
+                          final otherMemberId = entry.key;
+                          final info = entry.value;
+                          final otherMemberName = info['displayName'] ?? 'Unknown';
+                          final balance = (info['balance'] is num) ? (info['balance'] as num).toDouble() : 0.0;
                           return Text(
                             balance >= 0
                                 ? 'You lent $balance to $otherMemberName'
@@ -673,32 +822,47 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
     );
   }
 
-  Future<Map<String, double>> _getMemberBalances(String memberId) async {
+  /// Returns a map keyed by other memberId. Each value contains displayName and balance
+  /// { otherMemberId: { 'displayName': name, 'balance': value } }
+  Future<Map<String, Map<String, dynamic>>> _getMemberBalances(String memberId) async {
     final expensesSnapshot = await FirebaseFirestore.instance
         .collection('groups')
         .doc(widget.groupId)
         .collection('expenses')
         .get();
 
-    final balances = <String, double>{};
-    for (var expense in expensesSnapshot.docs) {
-      final share = expense['share'];
-      final createdBy = expense['createdBy'];
-      final membersSnapshot = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(widget.groupId)
-          .collection('members')
-          .get();
+    final membersSnapshot = await FirebaseFirestore.instance
+        .collection('groups')
+        .doc(widget.groupId)
+        .collection('members')
+        .get();
 
-      for (var member in membersSnapshot.docs) {
-        final otherMemberId = member['id'];
-        final otherMemberName = member['fullName'];
-        if (otherMemberId != memberId) {
-          if (createdBy == memberId) {
-            balances[otherMemberName] = (balances[otherMemberName] ?? 0) + share;
-          } else if (createdBy == otherMemberId) {
-            balances[otherMemberName] = (balances[otherMemberName] ?? 0) - share;
-          }
+    final members = <String, String>{}; // id -> displayName
+    for (var m in membersSnapshot.docs) {
+      final id = m['id'] as String? ?? '';
+      final name = m['fullName'] as String? ?? 'Unknown';
+      if (id.isNotEmpty) members[id] = name;
+    }
+
+    final balances = <String, Map<String, dynamic>>{};
+
+    for (var otherId in members.keys) {
+      if (otherId == memberId) continue;
+      balances[otherId] = {'displayName': members[otherId], 'balance': 0.0};
+    }
+
+    for (var expense in expensesSnapshot.docs) {
+      final share = (expense['share'] is num) ? (expense['share'] as num).toDouble() : 0.0;
+      final createdBy = expense['createdBy'] as String? ?? '';
+
+      for (var otherId in members.keys) {
+        if (otherId == memberId) continue;
+        // If the memberId created the expense, others owe positive share to them
+        if (createdBy == memberId) {
+          balances[otherId]!['balance'] = (balances[otherId]!['balance'] as double) + share;
+        } else if (createdBy == otherId) {
+          // If someone else created the expense, memberId owes negative share
+          balances[otherId]!['balance'] = (balances[otherId]!['balance'] as double) - share;
         }
       }
     }

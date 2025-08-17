@@ -33,8 +33,8 @@ class _ExpensesListState extends State<ExpensesList> {
     }
 
     return StreamBuilder<QuerySnapshot>(
-      stream:
-          _expensesCollection.where('paidBy', isEqualTo: user.uid).snapshots(),
+    stream:
+      _expensesCollection.where('createdBy', isEqualTo: user.uid).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: Text('Error: ${snapshot.error}'));

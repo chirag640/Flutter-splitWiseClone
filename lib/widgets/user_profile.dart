@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:logging/logging.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -12,6 +14,7 @@ class UserProfileScreen extends StatefulWidget {
 class _UserProfileScreenState extends State<UserProfileScreen> {
   final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   late Future<Map<String, dynamic>?> _userDataFuture;
+  final Logger _logger = Logger('UserProfileScreen');
 
   @override
   void initState() {
@@ -29,6 +32,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   void _logout(BuildContext context) async {
+    // Clear any secure storage tokens saved during sign-in/sign-up
+    try {
+      const secureStorage = FlutterSecureStorage();
+      await secureStorage.delete(key: 'refresh_token');
+      await secureStorage.delete(key: 'saved_email');
+    } catch (e) {
+      _logger.severe('Error clearing secure storage: $e');
+    }
     await FirebaseAuth.instance.signOut();
     Navigator.pushNamedAndRemoveUntil(context, '/login_signup', (route) => false);
   }
@@ -65,7 +76,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           _userDataFuture = _getUserData();
         });
       } catch (e) {
-        print('Error updating name: $e');
+        _logger.severe('Error updating name: $e');
         _scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
             content: Text('Error: ${e.toString()}'),
@@ -137,10 +148,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               return Center(child: Text('Error: ${snapshot.error}'));
             }
             if (!snapshot.hasData || snapshot.data == null) {
-              return const Center(child: Text('No user data found.'));
-            }
+                  return const Center(child: Text('No user data found.'));
+                }
 
-            final userData = snapshot.data!;
+                final userData = snapshot.data!;
+                final displayName = (userData['displayName'] as String?) ?? 'Unknown';
+                final email = (userData['email'] as String?) ?? 'Unknown';
             return SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -151,10 +164,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       child: ListTile(
                         leading: Icon(Icons.person),
                         title: Text('Full Name', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        subtitle: Text(userData['displayName'], style: TextStyle(fontSize: 16)),
+                        subtitle: Text(displayName, style: TextStyle(fontSize: 16)),
                         trailing: IconButton(
                           icon: Icon(Icons.edit),
-                          onPressed: () => _showUpdateNameDialog(context, userData['displayName']),
+                          onPressed: () => _showUpdateNameDialog(context, displayName),
                         ),
                       ),
                     ),
@@ -163,7 +176,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       child: ListTile(
                         leading: Icon(Icons.email),
                         title: Text('Email', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        subtitle: Text(userData['email'], style: TextStyle(fontSize: 16)),
+                        subtitle: Text(email, style: TextStyle(fontSize: 16)),
                       ),
                     ),
                     SizedBox(height: 20),

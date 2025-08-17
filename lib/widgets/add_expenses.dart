@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
+import 'package:logging/logging.dart';
 
 class AddExpenseScreen extends StatefulWidget {
   const AddExpenseScreen({super.key});
@@ -20,6 +21,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
     _amountController.dispose();
     super.dispose();
   }
+
+  final Logger _logger = Logger('AddExpenseScreen');
 
   @override
   Widget build(BuildContext context) {
@@ -65,11 +68,25 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 'id': expenseId,
                 'description': description,
                 'amount': amount,
-                'paidBy': user.uid,
+                'createdBy': user.uid,
                 'createdAt': Timestamp.now(),
               };
-              await FirebaseFirestore.instance.collection('expenses').doc(expenseId).set(expenseData);
-              Navigator.of(context).pop();
+              try {
+                await FirebaseFirestore.instance.collection('expenses').doc(expenseId).set(expenseData);
+                Navigator.of(context).pop();
+              } catch (e) {
+                // Handle permission errors gracefully to avoid app crash
+                _logger.severe('Error creating top-level expense: $e');
+                final errorMsg = (e is FirebaseException && e.code == 'permission-denied')
+                    ? 'Permission denied: cannot create expense. Check Firestore rules.'
+                    : 'Failed to create expense: ${e.toString()}';
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(errorMsg),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

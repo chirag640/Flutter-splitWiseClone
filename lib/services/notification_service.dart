@@ -5,42 +5,44 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:googleapis_auth/auth_io.dart';
+import 'package:logging/logging.dart';
 
 class NotificationService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static String custom_value = 'itsnotification';
+  static final Logger _logger = Logger('NotificationService');
 
   static Future<void> initialize() async {
-    print("NotificationService: Initializing...");
+    _logger.info('Initializing');
     try {
       final settings = await _messaging.requestPermission();
-      print("NotificationService: Permission status - ${settings.authorizationStatus}");
+      _logger.fine('Permission status - ${settings.authorizationStatus}');
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-        print("NotificationService: Notification permissions granted.");
+        _logger.info('Notification permissions granted.');
       } else if (settings.authorizationStatus == AuthorizationStatus.provisional) {
-        print("NotificationService: Notification permissions granted provisionally.");
+        _logger.info('Notification permissions granted provisionally.');
       } else {
-        print("NotificationService: Notification permissions denied.");
+        _logger.warning('Notification permissions denied.');
         return; // Exit if permissions are not granted
       }
 
       String? token = await _messaging.getToken();
       if (token != null) {
-        print("NotificationService: Generated FCM Token: $token");
+        _logger.fine('Generated FCM Token: $token');
         final user = FirebaseAuth.instance.currentUser;
         if (user != null) {
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
               .set({'token': token}, SetOptions(merge: true));
-          print("NotificationService: Token saved to Firestore for user: ${user.uid}");
+          _logger.fine('Token saved to Firestore for user: ${user.uid}');
         }
       } else {
-        print("NotificationService: Failed to generate FCM token.");
+        _logger.warning('Failed to generate FCM token.');
       }
     } catch (e) {
-      print("NotificationService: Error during initialization: $e");
+      _logger.severe('Error during initialization: $e');
     }
   }
 
@@ -66,10 +68,10 @@ class NotificationService {
 
       // Generate the access token
       final authClient = await clientViaServiceAccount(accountCredentials, scopes);
-      print("Access token generated successfully.");
+  _logger.fine('Access token generated successfully.');
       return authClient.credentials.accessToken.data;
     } catch (e) {
-      print("Error generating access token: $e");
+  _logger.severe('Error generating access token: $e');
       throw Exception("Failed to generate access token.");
     }
   }
@@ -101,15 +103,15 @@ class NotificationService {
       };
 
       final response = await http.post(Uri.parse(url), headers: headers, body: json.encode(payload));
-      print("Sending notification to token: $token");
+      _logger.fine('Sending notification to token: $token');
       if (response.statusCode == 200) {
-        print("Message sent successfully: ${response.body}");
+        _logger.fine('Message sent successfully: ${response.body}');
       } else {
-        print("Failed to send message. Status: ${response.statusCode}");
-        print("Response body: ${response.body}");
+        _logger.warning('Failed to send message. Status: ${response.statusCode}');
+        _logger.fine('Response body: ${response.body}');
       }
     } catch (e) {
-      print("Error sending notification: $e");
+      _logger.severe('Error sending notification: $e');
     }
   }
 
@@ -143,11 +145,11 @@ class NotificationService {
 
         final response = await http.post(Uri.parse(url), headers: headers, body: json.encode(payload));
         if (response.statusCode != 200) {
-          print("Failed to send notification to $token. Status: ${response.statusCode}");
+          _logger.warning('Failed to send notification to $token. Status: ${response.statusCode}');
         }
       }
     } catch (e) {
-      print("Error sending notifications: $e");
+      _logger.severe('Error sending notifications: $e');
     }
   }
 }
