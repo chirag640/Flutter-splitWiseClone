@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logging/logging.dart';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -25,10 +28,43 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   Future<Map<String, dynamic>?> _getUserData() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final userData = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-      return userData.data();
+      final docRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+      final snapshot = await docRef.get();
+      if (snapshot.exists && snapshot.data() != null) {
+        return snapshot.data();
+      }
+      // If the document doesn't exist (e.g., user signed in via Google), create a minimal profile
+      final token = await _getFcmTokenSafely();
+      final data = {
+        'displayName': user.displayName ?? '',
+        'email': user.email ?? '',
+        'uid': user.uid,
+        'photoURL': user.photoURL ?? '',
+        'token': token,
+        'provider': 'google',
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      try {
+        await docRef.set(data, SetOptions(merge: true));
+        return data;
+      } catch (e) {
+        _logger.severe('Failed to create user doc: $e');
+        return data; // return data so UI can display what we have
+      }
     }
     return null;
+  }
+
+  Future<String?> _getFcmTokenSafely() async {
+    try {
+      final supportsFcm = (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) || kIsWeb;
+      if (!supportsFcm) return null;
+      return await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      _logger.warning('FCM token fetch failed: $e');
+      return null;
+    }
   }
 
   void _logout(BuildContext context) async {

@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:splitwise/theme.dart';
 import 'package:splitwise/l10n/strings.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:splitwise/widgets/reset_password.dart';
+// google_sign_in and kIsWeb not required for the email/password sign-in screen
+// firebase_auth aliases/imports not needed here
 
 class SignIn extends StatefulWidget {
   const SignIn({super.key});
@@ -59,68 +60,54 @@ class _SignInState extends State<SignIn> {
   }
 
   void _signInUser() async {
-    final email = _emailController.text;
+    final email = _emailController.text.trim();
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill all the fields'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Please fill all the fields'), backgroundColor: Colors.red),
       );
       return;
     }
 
-  if (_isSubmitting) return;
-  setState(() => _isSubmitting = true);
-  try {
-      // Set the locale for Firebase Authentication
-      FirebaseAuth.instance.setLanguageCode('en'); // Change 'en' to your desired locale
+    if (_isSubmitting) return;
+    setState(() => _isSubmitting = true);
 
-      UserCredential userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+    try {
+      FirebaseAuth.instance.setLanguageCode('en');
+      final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: password);
+      final user = userCredential.user;
 
-      User? user = userCredential.user;
       if (user != null && !user.emailVerified) {
         await user.sendEmailVerification();
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Email not verified. Verification email sent.'),
-            backgroundColor: Colors.red,
-          ),
+          const SnackBar(content: Text('Email not verified. Verification email sent.'), backgroundColor: Colors.red),
         );
         await FirebaseAuth.instance.signOut();
       } else {
-  // Persist a short-lived token or marker securely to indicate a signed-in session.
-  // In FirebaseAuth you typically don't need to store the password or token manually
-  // because Firebase persists the user session. If you have a custom refresh token
-  // from backend, store it here instead.
-  try {
-    const secureStorage = FlutterSecureStorage();
-    await secureStorage.write(key: 'refresh_token', value: 'signed_in');
-  } catch (e) {
-    if (e.toString().contains('MissingPluginException')) {
-      debugPrint('[SignIn] SecureStorage plugin missing on write: $e');
-    } else {
-      rethrow;
-    }
-  }
+        try {
+          const secureStorage = FlutterSecureStorage();
+          await secureStorage.write(key: 'refresh_token', value: 'signed_in');
+        } catch (e) {
+          if (e.toString().contains('MissingPluginException')) {
+            debugPrint('[SignIn] SecureStorage plugin missing on write: $e');
+          } else {
+            rethrow;
+          }
+        }
 
-  Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
     } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.message}'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: ${e.message}'), backgroundColor: Colors.red),
       );
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
-  if (mounted) setState(() => _isSubmitting = false);
   }
+
+  // Google sign-in removed from this screen. Email/password sign-in remains.
 
   @override
   Widget build(BuildContext context) {
