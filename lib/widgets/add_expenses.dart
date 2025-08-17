@@ -14,6 +14,7 @@ class AddExpenseScreen extends StatefulWidget {
 class _AddExpenseScreenState extends State<AddExpenseScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _amountController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -31,34 +32,38 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: <Widget>[
-          TextField(
-            controller: _descriptionController,
-            decoration: InputDecoration(
-              labelText: 'Description',
-              border: OutlineInputBorder(),
+            TextField(
+              controller: _descriptionController,
+              enabled: !_isSubmitting,
+              decoration: InputDecoration(
+                labelText: 'Description',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
-          SizedBox(height: 10),
-          TextField(
-            controller: _amountController,
-            decoration: InputDecoration(
-              labelText: 'Amount',
-              border: OutlineInputBorder(),
+            SizedBox(height: 10),
+            TextField(
+              controller: _amountController,
+              enabled: !_isSubmitting,
+              decoration: InputDecoration(
+                labelText: 'Amount',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
             ),
-            keyboardType: TextInputType.number,
-          ),
           SizedBox(height: 20),
         ],
       ),
       actions: <Widget>[
         TextButton(
-          onPressed: () {
+          onPressed: _isSubmitting ? null : () {
             Navigator.of(context).pop();
           },
           child: Text('Cancel'),
         ),
         TextButton(
-          onPressed: () async {
+          onPressed: _isSubmitting ? null : () async {
+            if (_isSubmitting) return;
+            setState(() => _isSubmitting = true);
             final description = _descriptionController.text;
             final amount = double.tryParse(_amountController.text) ?? 0.0;
             final user = FirebaseAuth.instance.currentUser;
@@ -73,7 +78,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
               };
               try {
                 await FirebaseFirestore.instance.collection('expenses').doc(expenseId).set(expenseData);
-                Navigator.of(context).pop();
+                if (mounted) Navigator.of(context).pop();
               } catch (e) {
                 // Handle permission errors gracefully to avoid app crash
                 _logger.severe('Error creating top-level expense: $e');
@@ -95,8 +100,9 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 ),
               );
             }
+            if (mounted) setState(() => _isSubmitting = false);
           },
-          child: Text('Save'),
+          child: _isSubmitting ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text('Save'),
         ),
       ],
     );

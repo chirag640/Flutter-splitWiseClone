@@ -12,6 +12,7 @@ class AddGroupScreen extends StatefulWidget {
 
 class _AddGroupScreenState extends State<AddGroupScreen> {
   final TextEditingController _groupNameController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -24,6 +25,8 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (groupName.isNotEmpty && user != null) {
+  if (_isSubmitting) return;
+  setState(() => _isSubmitting = true);
       final userSnapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
       final fullName = userSnapshot.data()?['displayName'] ?? '';
       final token = userSnapshot.data()?['token'] ?? ''; // Fetch the token
@@ -50,8 +53,10 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
           .collection('members')
           .doc(user.uid)
           .set(memberData);
-
-      Navigator.pop(context);
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        Navigator.pop(context);
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -71,6 +76,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
         children: [
           TextField(
             controller: _groupNameController,
+            enabled: !_isSubmitting,
             decoration: InputDecoration(
               labelText: 'Group Name',
               border: OutlineInputBorder(),
@@ -81,14 +87,14 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
       ),
       actions: [
         TextButton(
-          onPressed: () {
+          onPressed: _isSubmitting ? null : () {
             Navigator.of(context).pop();
           },
           child: Text('Cancel'),
         ),
         TextButton(
-          onPressed: _addGroup,
-          child: Text('Add Group'),
+          onPressed: _isSubmitting ? null : _addGroup,
+          child: _isSubmitting ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text('Add Group'),
         ),
       ],
     );

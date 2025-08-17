@@ -24,6 +24,7 @@ class _SignUpState extends State<SignUp> {
   final TextEditingController _fullNameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -50,6 +51,8 @@ String? _isPasswordStrong(String password) {
 
   void _registerUser() async {
   if (!_formKey.currentState!.validate()) return;
+  if (_isSubmitting) return; // prevent double submissions
+  setState(() => _isSubmitting = true);
   _fullName = _fullNameController.text.trim();
   _email = _emailController.text.trim();
   _password = _passwordController.text;
@@ -107,6 +110,7 @@ String? _isPasswordStrong(String password) {
     }
     _showSnackBar('Error: $e');
   }
+  if (mounted) setState(() => _isSubmitting = false);
 }
 
   // Helper to safely show SnackBars only when the widget is mounted.
@@ -155,10 +159,11 @@ String? _isPasswordStrong(String password) {
   @override
   Widget build(BuildContext context) {
     final textScale = MediaQuery.textScaleFactorOf(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.md),
+          padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.md + bottomInset),
           child: Form(
             key: _formKey,
             child: Column(
@@ -166,11 +171,19 @@ String? _isPasswordStrong(String password) {
               children: [
                 IconButton(
                   icon: Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    // prefer pop, fallback to named replacement if none
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/login_signup');
+                    }
+                  },
                 ),
                 SizedBox(height: AppSpacing.lg),
                 TextFormField(
                   controller: _fullNameController,
+                  enabled: !_isSubmitting,
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your full name' : null,
                   decoration: InputDecoration(labelText: 'Full name'),
@@ -178,6 +191,7 @@ String? _isPasswordStrong(String password) {
                 SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _emailController,
+                  enabled: !_isSubmitting,
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Enter email';
@@ -190,6 +204,7 @@ String? _isPasswordStrong(String password) {
                 SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _passwordController,
+                  enabled: !_isSubmitting,
                   obscureText: _obscurePassword,
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) => _isPasswordStrong(v ?? '') ,
@@ -247,8 +262,10 @@ String? _isPasswordStrong(String password) {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _registerUser,
-                    child: Text('Done'),
+                    onPressed: _isSubmitting ? null : _registerUser,
+                    child: _isSubmitting
+                        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text('Done'),
                   ),
                 ),
                 SizedBox(height: AppSpacing.lg),

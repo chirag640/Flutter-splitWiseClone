@@ -17,6 +17,7 @@ class _SignInState extends State<SignIn> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -70,7 +71,9 @@ class _SignInState extends State<SignIn> {
       return;
     }
 
-    try {
+  if (_isSubmitting) return;
+  setState(() => _isSubmitting = true);
+  try {
       // Set the locale for Firebase Authentication
       FirebaseAuth.instance.setLanguageCode('en'); // Change 'en' to your desired locale
 
@@ -115,14 +118,16 @@ class _SignInState extends State<SignIn> {
         ),
       );
     }
+  if (mounted) setState(() => _isSubmitting = false);
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(AppSpacing.md),
+          padding: EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.md + bottomInset),
           child: Form(
             key: _formKey,
             child: Column(
@@ -130,11 +135,18 @@ class _SignInState extends State<SignIn> {
               children: [
                 IconButton(
                   icon: Icon(Icons.arrow_back),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () {
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    } else {
+                      Navigator.pushReplacementNamed(context, '/login_signup');
+                    }
+                  },
                 ),
                 SizedBox(height: AppSpacing.lg),
                 TextFormField(
                   controller: _emailController,
+                  enabled: !_isSubmitting,
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) {
                     if (v == null || v.trim().isEmpty) return 'Enter email';
@@ -147,6 +159,7 @@ class _SignInState extends State<SignIn> {
                 SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _passwordController,
+                  enabled: !_isSubmitting,
                   obscureText: _obscurePassword,
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) => (v == null || v.isEmpty) ? 'Enter password' : null,
@@ -163,16 +176,18 @@ class _SignInState extends State<SignIn> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: _isSubmitting ? null : () {
                       if (_formKey.currentState!.validate()) _signInUser();
                     },
-                    child: Text('Sign In'),
+                    child: _isSubmitting
+                        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : Text('Sign In'),
                   ),
                 ),
                 SizedBox(height: AppSpacing.md),
                 Center(
                   child: TextButton(
-                    onPressed: () {
+                    onPressed: _isSubmitting ? null : () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => ResetPasswordScreen()),

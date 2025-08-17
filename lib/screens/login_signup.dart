@@ -24,6 +24,16 @@ class LoginSignup extends StatelessWidget {
               'Splitwise',
               style: Theme.of(context).textTheme.titleLarge,
             ),
+            SizedBox(height: AppSpacing.sm),
+            // Subtitle / brief value prop
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40.0),
+              child: Text(
+                'Split bills & track balances with friends',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onBackground.withOpacity(0.85)),
+              ),
+            ),
             Spacer(),
             // Sign up button
             Padding(
