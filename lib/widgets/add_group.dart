@@ -81,6 +81,8 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
               labelText: 'Group Name',
               border: OutlineInputBorder(),
             ),
+            keyboardType: TextInputType.text,
+            textInputAction: TextInputAction.done,
           ),
           SizedBox(height: 20),
         ],
@@ -95,6 +97,7 @@ class _AddGroupScreenState extends State<AddGroupScreen> {
         TextButton(
           onPressed: _isSubmitting ? null : _addGroup,
           child: _isSubmitting ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Text('Add Group'),
+          style: TextButton.styleFrom()
         ),
       ],
     );

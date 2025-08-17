@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:splitwise/theme.dart';
+import 'package:splitwise/l10n/strings.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -67,8 +68,8 @@ String? _isPasswordStrong(String password) {
     );
 
     User? user = userCredential.user;
-    if (user != null) {
-      await user.sendEmailVerification();
+      if (user != null) {
+        await user.sendEmailVerification();
 
       // Obtain FCM token safely (will return null on unsupported platforms or if plugin missing)
       final token = await _getFcmTokenSafely();
@@ -93,9 +94,8 @@ String? _isPasswordStrong(String password) {
   await _secureWrite('saved_email', _email);
   await _secureWrite('refresh_token', 'signed_in');
 
-  _showSnackBar('Verification email sent. Please check your inbox.', backgroundColor: AppColors.success);
-
-      Navigator.pushNamedAndRemoveUntil(context, '/login_signup', (route) => false);
+  // Navigate to a dedicated check-email screen so user can resend / confirm
+  if (mounted) Navigator.pushReplacementNamed(context, '/check_email');
     }
   } on FirebaseAuthException catch (e) {
     _showSnackBar('Auth error: ${e.message}');
@@ -171,6 +171,7 @@ String? _isPasswordStrong(String password) {
               children: [
                 IconButton(
                   icon: Icon(Icons.arrow_back),
+                  tooltip: 'Back',
                   onPressed: () {
                     // prefer pop, fallback to named replacement if none
                     if (Navigator.canPop(context)) {
@@ -186,7 +187,7 @@ String? _isPasswordStrong(String password) {
                   enabled: !_isSubmitting,
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Enter your full name' : null,
-                  decoration: InputDecoration(labelText: 'Full name'),
+                  decoration: InputDecoration(labelText: Strings.fullName),
                 ),
                 SizedBox(height: AppSpacing.md),
                 TextFormField(
@@ -199,7 +200,7 @@ String? _isPasswordStrong(String password) {
                     if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email';
                     return null;
                   },
-                  decoration: InputDecoration(labelText: 'Email address'),
+                  decoration: InputDecoration(labelText: Strings.emailAddress),
                 ),
                 SizedBox(height: AppSpacing.md),
                 TextFormField(
@@ -209,9 +210,10 @@ String? _isPasswordStrong(String password) {
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) => _isPasswordStrong(v ?? '') ,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: Strings.password,
                     suffixIcon: IconButton(
                       icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                      tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                       onPressed: _togglePasswordVisibility,
                     ),
                     helperText: 'Minimum 8 characters',
@@ -263,9 +265,9 @@ String? _isPasswordStrong(String password) {
                   height: 50,
                   child: ElevatedButton(
                     onPressed: _isSubmitting ? null : _registerUser,
-                    child: _isSubmitting
-                        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text('Done'),
+        child: _isSubmitting
+          ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+          : Text(Strings.createAccount),
                   ),
                 ),
                 SizedBox(height: AppSpacing.lg),

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:splitwise/theme.dart';
+import 'package:splitwise/l10n/strings.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:splitwise/widgets/reset_password.dart';
@@ -135,6 +136,7 @@ class _SignInState extends State<SignIn> {
               children: [
                 IconButton(
                   icon: Icon(Icons.arrow_back),
+                  tooltip: 'Back',
                   onPressed: () {
                     if (Navigator.canPop(context)) {
                       Navigator.pop(context);
@@ -154,7 +156,7 @@ class _SignInState extends State<SignIn> {
                     if (!emailRegex.hasMatch(v.trim())) return 'Enter a valid email';
                     return null;
                   },
-                  decoration: InputDecoration(labelText: 'Email address'),
+                  decoration: InputDecoration(labelText: Strings.emailAddress),
                 ),
                 SizedBox(height: AppSpacing.md),
                 TextFormField(
@@ -164,9 +166,10 @@ class _SignInState extends State<SignIn> {
                   style: Theme.of(context).textTheme.bodyMedium,
                   validator: (v) => (v == null || v.isEmpty) ? 'Enter password' : null,
                   decoration: InputDecoration(
-                    labelText: 'Password',
+                    labelText: Strings.password,
                     suffixIcon: IconButton(
                       icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
+                      tooltip: _obscurePassword ? 'Show password' : 'Hide password',
                       onPressed: _togglePasswordVisibility,
                     ),
                   ),
@@ -179,9 +182,9 @@ class _SignInState extends State<SignIn> {
                     onPressed: _isSubmitting ? null : () {
                       if (_formKey.currentState!.validate()) _signInUser();
                     },
-                    child: _isSubmitting
-                        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : Text('Sign In'),
+          child: _isSubmitting
+            ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+            : Text(Strings.signIn),
                   ),
                 ),
                 SizedBox(height: AppSpacing.md),

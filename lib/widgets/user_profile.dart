@@ -137,7 +137,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     return ScaffoldMessenger(
       key: _scaffoldMessengerKey,
       child: Scaffold(
-        backgroundColor: Colors.black,
+        // use themed background
         body: FutureBuilder<Map<String, dynamic>?>(
           future: _userDataFuture,
           builder: (context, snapshot) {
@@ -154,25 +154,30 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 final userData = snapshot.data!;
                 final displayName = (userData['displayName'] as String?) ?? 'Unknown';
                 final email = (userData['email'] as String?) ?? 'Unknown';
-            return SingleChildScrollView(
+                return SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Card(
+                      color: Theme.of(context).cardColor,
                       child: ListTile(
-                        leading: Icon(Icons.person),
+                        leading: CircleAvatar(
+                          child: Text((displayName.isNotEmpty ? displayName[0] : 'U').toUpperCase()),
+                        ),
                         title: Text('Full Name', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                         subtitle: Text(displayName, style: TextStyle(fontSize: 16)),
                         trailing: IconButton(
                           icon: Icon(Icons.edit),
+                          tooltip: 'Edit name',
                           onPressed: () => _showUpdateNameDialog(context, displayName),
                         ),
                       ),
                     ),
                     SizedBox(height: 10),
                     Card(
+                      color: Theme.of(context).cardColor,
                       child: ListTile(
                         leading: Icon(Icons.email),
                         title: Text('Email', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -184,7 +189,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       child: ElevatedButton(
                         onPressed: () => _logout(context),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: Theme.of(context).colorScheme.error,
                           padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                         ),
                         child: const Text('Logout', style: TextStyle(fontSize: 16)),

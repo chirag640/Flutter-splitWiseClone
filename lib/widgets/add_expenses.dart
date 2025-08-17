@@ -39,6 +39,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 labelText: 'Description',
                 border: OutlineInputBorder(),
               ),
+              keyboardType: TextInputType.text,
             ),
             SizedBox(height: 10),
             TextField(
@@ -48,7 +49,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                 labelText: 'Amount',
                 border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
             ),
           SizedBox(height: 20),
         ],

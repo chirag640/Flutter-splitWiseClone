@@ -5,6 +5,7 @@ import 'package:splitwise/screens/home.dart';
 import 'package:splitwise/screens/login_signup.dart';
 import 'package:splitwise/screens/sign_in.dart';
 import 'package:splitwise/screens/sign_up.dart';
+import 'package:splitwise/screens/check_email.dart';
 import 'package:splitwise/theme.dart';
 import 'package:splitwise/services/notification_service.dart';
 import 'package:splitwise/widgets/user_profile.dart';
@@ -67,6 +68,7 @@ class MainApp extends StatelessWidget {
         '/sign_in': (context) => SignIn(),
         '/login_signup': (context) => LoginSignup(),
         '/sign_up': (context) => SignUp(),
+  '/check_email': (context) => CheckEmailScreen(),
         '/home': (context) => Home(),
         '/user_profile': (context) => UserProfileScreen(),
       },

@@ -503,7 +503,8 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
 
   FloatingActionButton addBtn(BuildContext context) {
     return FloatingActionButton(
-      backgroundColor: Colors.green,
+      tooltip: 'Add expense',
+      backgroundColor: Theme.of(context).colorScheme.primary,
       onPressed: () {
         showDialog(
           context: context,
@@ -514,7 +515,7 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
               children: [
                 TextField(
                   controller: _expenseDescriptionController,
-                  decoration: InputDecoration(labelText: 'Description'),
+                  decoration: InputDecoration(labelText: 'Description', semanticCounterText: 'description input'),
                 ),
                 TextField(
                   controller: _expenseAmountController,
